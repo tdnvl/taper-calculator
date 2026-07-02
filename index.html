@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Taper Calculator</title>
+<title>Taper &amp; Pass Calculator</title>
 <style>
   :root {
     --ink: #ffffff;
@@ -12,6 +12,7 @@
     --accent: #ffb84d;
     --card: #1a1a1a;
     --dim: #b8b8b8;
+    --dimmer: #7a7a7a;
   }
   * { box-sizing: border-box; }
   body {
@@ -20,20 +21,96 @@
     color: var(--ink);
     font-family: -apple-system, BlinkMacSystemFont, "Georgia", serif;
     -webkit-font-smoothing: antialiased;
-    padding: 24px 16px 60px;
     min-height: 100vh;
   }
   .wrap {
     max-width: 480px;
     margin: 0 auto;
+    padding: 0 16px 60px;
   }
-  h1 {
-    font-size: 1.6rem;
+
+  /* Top bar / hamburger nav */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 16px;
+    max-width: 480px;
+    margin: 0 auto;
+    position: sticky;
+    top: 0;
+    background: var(--paper);
+    z-index: 20;
+    border-bottom: 2px solid var(--line);
+  }
+  .topbar h1 {
+    font-size: 1.25rem;
     font-weight: 700;
-    letter-spacing: 0.01em;
-    margin: 0 0 4px;
+    margin: 0;
     color: #ffffff;
   }
+  .hamburger {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    border: 2px solid var(--accent);
+    background: var(--paper);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    -webkit-appearance: none;
+  }
+  .hamburger span {
+    display: block;
+    width: 20px;
+    height: 2px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+  .menu {
+    display: none;
+    position: fixed;
+    top: 0; right: 0; bottom: 0;
+    width: 78%;
+    max-width: 300px;
+    background: var(--card);
+    border-left: 2px solid var(--accent);
+    z-index: 30;
+    padding: 24px 0;
+  }
+  .menu.show { display: block; }
+  .menu-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 25;
+  }
+  .menu-overlay.show { display: block; }
+  .menu-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 18px 24px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    background: none;
+    border: none;
+    color: var(--dim);
+    font-family: inherit;
+    -webkit-appearance: none;
+  }
+  .menu-item.active {
+    color: var(--accent);
+    background: rgba(255,184,77,0.08);
+    border-left: 3px solid var(--accent);
+  }
+
+  .view { display: none; padding-top: 24px; }
+  .view.active { display: block; }
+
   .sub {
     font-size: 0.95rem;
     color: var(--dim);
@@ -62,9 +139,7 @@
     background: var(--accent);
     color: #0a0a0a;
   }
-  .field {
-    margin-bottom: 20px;
-  }
+  .field { margin-bottom: 20px; }
   label {
     display: block;
     font-size: 1rem;
@@ -93,6 +168,24 @@
     outline: none;
     border-color: var(--accent);
   }
+  input.error { border-color: #ff5c5c; color: #ff5c5c; }
+
+  .pair {
+    display: flex;
+    gap: 10px;
+  }
+  .pair-box { flex: 1; }
+  .pair-box label {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--dim);
+    margin-bottom: 6px;
+  }
+  .pair-box input[type="text"] {
+    font-size: 1.3rem;
+    padding: 14px 10px;
+  }
+
   .results {
     margin-top: 32px;
     border-top: 2px solid var(--line);
@@ -106,10 +199,7 @@
     border-bottom: 1px dashed var(--line);
   }
   .result-row:last-child { border-bottom: none; }
-  .result-label {
-    font-size: 1rem;
-    color: var(--dim);
-  }
+  .result-label { font-size: 1rem; color: var(--dim); }
   .result-value {
     font-size: 1.5rem;
     font-weight: 700;
@@ -122,70 +212,251 @@
     text-align: center;
     padding: 24px 0;
   }
-  .diagram {
-    margin: 4px 0 28px;
-    text-align: center;
-  }
+
+  .diagram { margin: 4px 0 28px; text-align: center; }
   .diagram svg { max-width: 100%; height: auto; }
-  .note {
-    margin-top: 28px;
-    font-size: 0.82rem;
-    color: var(--dim);
-    line-height: 1.5;
+  .note { margin-top: 28px; font-size: 0.82rem; color: var(--dim); line-height: 1.5; }
+
+  /* Pass calculator big result */
+  .pass-result {
+    margin-top: 32px;
+    text-align: center;
+    border-top: 2px solid var(--line);
+    padding-top: 28px;
   }
+  .pass-direction {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--dim);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+  .pass-main {
+    font-size: 3.4rem;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+  }
+  .pass-main-unit {
+    font-size: 1.2rem;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .pass-sub {
+    margin-top: 10px;
+    font-size: 1rem;
+    color: var(--dimmer);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Overlay dialog (taper flip) */
+  .overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.75);
+    z-index: 40;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .overlay.show { display: flex; }
+  .dialog {
+    background: var(--card);
+    border: 2px solid var(--accent);
+    border-radius: 14px;
+    padding: 24px;
+    max-width: 380px;
+    width: 100%;
+  }
+  .dialog p {
+    font-size: 1.05rem;
+    line-height: 1.5;
+    margin: 0 0 20px;
+    color: #ffffff;
+  }
+  .dialog-buttons { display: flex; gap: 12px; }
+  .dialog-buttons button {
+    flex: 1;
+    padding: 14px 8px;
+    font-size: 1rem;
+    font-weight: 700;
+    border-radius: 10px;
+    border: 2px solid var(--accent);
+    font-family: inherit;
+    -webkit-appearance: none;
+  }
+  .dialog-buttons .yes { background: var(--accent); color: #0a0a0a; }
+  .dialog-buttons .no { background: var(--paper); color: var(--accent); }
 </style>
 </head>
 <body>
+
+<div class="topbar">
+  <h1 id="page-title">Taper Calculator</h1>
+  <button class="hamburger" id="hamburger-btn" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+</div>
+
+<div class="menu-overlay" id="menu-overlay"></div>
+<nav class="menu" id="menu">
+  <button class="menu-item active" id="nav-taper">Taper Calculator</button>
+  <button class="menu-item" id="nav-pass">Pass Calculator</button>
+</nav>
+
 <div class="wrap">
-  <h1>Taper Calculator</h1>
-  <p class="sub">Enter major diameter (D), minor diameter (d), and taper length to get taper rate and angle.</p>
 
-  <div class="diagram">
-    <svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
-      <line x1="20" y1="50" x2="280" y2="50" stroke="#444444" stroke-width="1" stroke-dasharray="4 3"/>
-      <polygon points="20,20 20,80 260,62 260,38" fill="none" stroke="#ffb84d" stroke-width="2.5" stroke-linejoin="round"/>
-      <text x="10" y="15" font-size="13" fill="#ffffff" text-anchor="middle" font-family="-apple-system, sans-serif" font-weight="700">D</text>
-      <text x="270" y="32" font-size="13" fill="#ffffff" text-anchor="middle" font-family="-apple-system, sans-serif" font-weight="700">d</text>
-      <text x="140" y="95" font-size="12" fill="#b8b8b8" text-anchor="middle" font-family="-apple-system, sans-serif">length</text>
-    </svg>
+  <!-- ===================== TAPER VIEW ===================== -->
+  <section class="view active" id="view-taper">
+    <p class="sub">Enter major diameter (D), minor diameter (d), and taper length to get taper rate and angle.</p>
+
+    <div class="diagram">
+      <svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
+        <line x1="20" y1="50" x2="280" y2="50" stroke="#444444" stroke-width="1" stroke-dasharray="4 3"/>
+        <polygon points="20,20 20,80 260,62 260,38" fill="none" stroke="#ffb84d" stroke-width="2.5" stroke-linejoin="round"/>
+        <text x="10" y="15" font-size="13" fill="#ffffff" text-anchor="middle" font-family="-apple-system, sans-serif" font-weight="700">D</text>
+        <text x="270" y="32" font-size="13" fill="#ffffff" text-anchor="middle" font-family="-apple-system, sans-serif" font-weight="700">d</text>
+        <text x="140" y="95" font-size="12" fill="#b8b8b8" text-anchor="middle" font-family="-apple-system, sans-serif">length</text>
+      </svg>
+    </div>
+
+    <div class="toggle">
+      <button id="btn-mm" class="active">mm</button>
+      <button id="btn-in">inch thousandths</button>
+    </div>
+
+    <div class="field">
+      <label for="major">Major diameter (D) <span class="unit-hint">larger end</span></label>
+      <input type="text" id="major" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" placeholder="0.000" autocomplete="off">
+    </div>
+
+    <div class="field">
+      <label for="minor">Minor diameter (d) <span class="unit-hint">smaller end</span></label>
+      <input type="text" id="minor" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" placeholder="0.000" autocomplete="off">
+    </div>
+
+    <div class="field">
+      <label for="length">Length of taper</label>
+      <input type="text" id="length" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" placeholder="0.000" autocomplete="off">
+    </div>
+
+    <div class="results" id="results">
+      <div class="placeholder">Fill in all three fields to see results</div>
+    </div>
+
+    <p class="note">Same units in, same units out. In mm mode, taper is given per mm of length. In inch thousandths mode, taper is given per inch.</p>
+  </section>
+
+  <!-- ===================== PASS VIEW ===================== -->
+  <section class="view" id="view-pass">
+    <p class="sub">Enter target and current diameter, each in mm or inch. The difference is your pass, shown in thousandths of an inch.</p>
+
+    <div class="field">
+      <label>Target diameter</label>
+      <div class="pair">
+        <div class="pair-box">
+          <label for="target-mm">mm</label>
+          <input type="text" id="target-mm" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" placeholder="0.000" autocomplete="off">
+        </div>
+        <div class="pair-box">
+          <label for="target-in">in <span class="unit-hint">.000</span></label>
+          <input type="text" id="target-in" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" placeholder="0.000" autocomplete="off">
+        </div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Current diameter</label>
+      <div class="pair">
+        <div class="pair-box">
+          <label for="current-mm">mm</label>
+          <input type="text" id="current-mm" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" placeholder="0.000" autocomplete="off">
+        </div>
+        <div class="pair-box">
+          <label for="current-in">in <span class="unit-hint">.000</span></label>
+          <input type="text" id="current-in" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" placeholder="0.000" autocomplete="off">
+        </div>
+      </div>
+    </div>
+
+    <div class="pass-result" id="pass-results">
+      <div class="placeholder">Enter target and current diameter to see the pass</div>
+    </div>
+
+    <p class="note">Fill only one box per diameter, mm or inch. If both are filled, the mm value wins.</p>
+  </section>
+
+</div>
+
+<!-- Taper flip confirmation dialog -->
+<div class="overlay" id="overlay">
+  <div class="dialog">
+    <p>The minor diameter is greater than the major diameter. Do you want to flip the values?</p>
+    <div class="dialog-buttons">
+      <button class="no" id="dialog-no">NO</button>
+      <button class="yes" id="dialog-yes">YES</button>
+    </div>
   </div>
-
-  <div class="toggle">
-    <button id="btn-mm" class="active">mm</button>
-    <button id="btn-in">inch thousandths</button>
-  </div>
-
-  <div class="field">
-    <label for="major">Major diameter (D) <span class="unit-hint" id="hint-major">larger end</span></label>
-    <input type="text" id="major" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" placeholder="0.000" autocomplete="off">
-  </div>
-
-  <div class="field">
-    <label for="minor">Minor diameter (d) <span class="unit-hint" id="hint-minor">smaller end</span></label>
-    <input type="text" id="minor" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" placeholder="0.000" autocomplete="off">
-  </div>
-
-  <div class="field">
-    <label for="length">Length of taper</label>
-    <input type="text" id="length" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" placeholder="0.000" autocomplete="off">
-  </div>
-
-  <div class="results" id="results">
-    <div class="placeholder">Fill in all three fields to see results</div>
-  </div>
-
-  <p class="note" id="note">Same units in, same units out. In mm mode, taper is given per mm of length. In inch thousandths mode, taper is given per inch.</p>
 </div>
 
 <script>
+  /* ---------- Nav ---------- */
+  const hamburgerBtn = document.getElementById('hamburger-btn');
+  const menu = document.getElementById('menu');
+  const menuOverlay = document.getElementById('menu-overlay');
+  const navTaper = document.getElementById('nav-taper');
+  const navPass = document.getElementById('nav-pass');
+  const viewTaper = document.getElementById('view-taper');
+  const viewPass = document.getElementById('view-pass');
+  const pageTitle = document.getElementById('page-title');
+
+  function openMenu() {
+    menu.classList.add('show');
+    menuOverlay.classList.add('show');
+  }
+  function closeMenu() {
+    menu.classList.remove('show');
+    menuOverlay.classList.remove('show');
+  }
+  hamburgerBtn.addEventListener('click', openMenu);
+  menuOverlay.addEventListener('click', closeMenu);
+
+  function showTaper() {
+    viewTaper.classList.add('active');
+    viewPass.classList.remove('active');
+    navTaper.classList.add('active');
+    navPass.classList.remove('active');
+    pageTitle.textContent = 'Taper Calculator';
+    closeMenu();
+  }
+  function showPass() {
+    viewPass.classList.add('active');
+    viewTaper.classList.remove('active');
+    navPass.classList.add('active');
+    navTaper.classList.remove('active');
+    pageTitle.textContent = 'Pass Calculator';
+    closeMenu();
+  }
+  navTaper.addEventListener('click', showTaper);
+  navPass.addEventListener('click', showPass);
+
+  /* ---------- Taper calculator ---------- */
   const major = document.getElementById('major');
   const minor = document.getElementById('minor');
   const length = document.getElementById('length');
   const results = document.getElementById('results');
   const btnMm = document.getElementById('btn-mm');
   const btnIn = document.getElementById('btn-in');
+  const overlay = document.getElementById('overlay');
+  const dialogYes = document.getElementById('dialog-yes');
+  const dialogNo = document.getElementById('dialog-no');
 
   let unit = 'mm';
+  let dialogOpen = false;
+  let dialogDismissed = false;
 
   function setUnit(u) {
     unit = u;
@@ -196,25 +467,46 @@
       btnIn.classList.add('active');
       btnMm.classList.remove('active');
     }
-    calculate();
+    calculateTaper();
   }
-
   btnMm.addEventListener('click', () => setUnit('mm'));
   btnIn.addEventListener('click', () => setUnit('in'));
 
-  function sanitize(input) {
-    input.addEventListener('input', () => {
-      let v = input.value.replace(/[^0-9.]/g, '');
-      const parts = v.split('.');
-      if (parts.length > 2) v = parts[0] + '.' + parts.slice(1).join('');
-      input.value = v;
-      calculate();
-    });
+  function sanitizeDecimal(input) {
+    let v = input.value.replace(/[^0-9.]/g, '');
+    const parts = v.split('.');
+    if (parts.length > 2) v = parts[0] + '.' + parts.slice(1).join('');
+    input.value = v;
   }
 
-  [major, minor, length].forEach(sanitize);
+  function sanitizeTaper(input, resetsDismiss) {
+    input.addEventListener('input', () => {
+      sanitizeDecimal(input);
+      if (resetsDismiss) dialogDismissed = false;
+      calculateTaper();
+    });
+  }
+  sanitizeTaper(major, true);
+  sanitizeTaper(minor, true);
+  sanitizeTaper(length, false);
 
-  function calculate() {
+  dialogYes.addEventListener('click', () => {
+    const temp = major.value;
+    major.value = minor.value;
+    minor.value = temp;
+    minor.classList.remove('error');
+    overlay.classList.remove('show');
+    dialogOpen = false;
+    calculateTaper();
+  });
+
+  dialogNo.addEventListener('click', () => {
+    overlay.classList.remove('show');
+    dialogOpen = false;
+    dialogDismissed = true;
+  });
+
+  function calculateTaper() {
     const D = parseFloat(major.value);
     const d = parseFloat(minor.value);
     const tl = parseFloat(length.value);
@@ -222,6 +514,19 @@
     if (isNaN(D) || isNaN(d) || isNaN(tl) || tl === 0) {
       results.innerHTML = '<div class="placeholder">Fill in all three fields to see results</div>';
       return;
+    }
+
+    if (d > D) {
+      minor.classList.add('error');
+      if (!dialogOpen && !dialogDismissed) {
+        dialogOpen = true;
+        overlay.classList.add('show');
+      }
+      results.innerHTML = '<div class="placeholder">Fill in all three fields to see results</div>';
+      return;
+    } else {
+      minor.classList.remove('error');
+      dialogDismissed = false;
     }
 
     const taperPerUnit = (D - d) / tl;
@@ -251,6 +556,63 @@
         </div>
       `;
     }
+  }
+
+  /* ---------- Pass calculator ---------- */
+  const targetMmInput = document.getElementById('target-mm');
+  const targetInInput = document.getElementById('target-in');
+  const currentMmInput = document.getElementById('current-mm');
+  const currentInInput = document.getElementById('current-in');
+  const passResults = document.getElementById('pass-results');
+
+  const MM_PER_INCH = 25.4;
+
+  function linkPair(mmInput, inInput) {
+    mmInput.addEventListener('input', () => {
+      sanitizeDecimal(mmInput);
+      if (mmInput.value !== '') inInput.value = '';
+      calculatePass();
+    });
+    inInput.addEventListener('input', () => {
+      sanitizeDecimal(inInput);
+      if (inInput.value !== '') mmInput.value = '';
+      calculatePass();
+    });
+  }
+  linkPair(targetMmInput, targetInInput);
+  linkPair(currentMmInput, currentInInput);
+
+  function diameterToMm(mmInput, inInput) {
+    const mmVal = parseFloat(mmInput.value);
+    const inVal = parseFloat(inInput.value);
+    if (!isNaN(mmVal)) return mmVal;
+    if (!isNaN(inVal)) return inVal * MM_PER_INCH;
+    return NaN;
+  }
+
+  function calculatePass() {
+    const targetMm = diameterToMm(targetMmInput, targetInInput);
+    const currentMm = diameterToMm(currentMmInput, currentInInput);
+
+    if (isNaN(targetMm) || isNaN(currentMm)) {
+      passResults.innerHTML = '<div class="placeholder">Enter target and current diameter to see the pass</div>';
+      return;
+    }
+
+    const diffMm = currentMm - targetMm;
+    const diffThou = (diffMm / MM_PER_INCH) * 1000;
+    const absThou = Math.abs(diffThou);
+    const absMm = Math.abs(diffMm);
+
+    let direction = 'On target';
+    if (diffMm > 0.0001) direction = 'Remove';
+    else if (diffMm < -0.0001) direction = 'Add';
+
+    passResults.innerHTML = `
+      <div class="pass-direction">${direction}</div>
+      <div class="pass-main">${absThou.toFixed(1)}<span class="pass-main-unit"> thou</span></div>
+      <div class="pass-sub">${absMm.toFixed(3)} mm</div>
+    `;
   }
 </script>
 </body>
