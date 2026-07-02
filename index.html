@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Taper Calculator</title>
+<style>
+  :root {
+    --ink: #ffffff;
+    --paper: #0a0a0a;
+    --line: #444444;
+    --accent: #ffb84d;
+    --card: #1a1a1a;
+    --dim: #b8b8b8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Georgia", serif;
+    -webkit-font-smoothing: antialiased;
+    padding: 24px 16px 60px;
+    min-height: 100vh;
+  }
+  .wrap {
+    max-width: 480px;
+    margin: 0 auto;
+  }
+  h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    margin: 0 0 4px;
+    color: #ffffff;
+  }
+  .sub {
+    font-size: 0.95rem;
+    color: var(--dim);
+    margin: 0 0 24px;
+    line-height: 1.4;
+  }
+  .toggle {
+    display: flex;
+    border: 2px solid var(--accent);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 28px;
+  }
+  .toggle button {
+    flex: 1;
+    padding: 14px 8px;
+    font-size: 1rem;
+    font-weight: 700;
+    border: none;
+    background: var(--paper);
+    color: var(--accent);
+    font-family: inherit;
+    -webkit-appearance: none;
+  }
+  .toggle button.active {
+    background: var(--accent);
+    color: #0a0a0a;
+  }
+  .field {
+    margin-bottom: 20px;
+  }
+  label {
+    display: block;
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: #ffffff;
+  }
+  .unit-hint {
+    font-weight: 400;
+    color: var(--dim);
+    font-size: 0.85rem;
+  }
+  input[type="text"] {
+    width: 100%;
+    font-size: 1.7rem;
+    padding: 18px 14px;
+    border-radius: 12px;
+    border: 2px solid var(--line);
+    background: var(--card);
+    color: #ffffff;
+    font-family: inherit;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  input[type="text"]:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .results {
+    margin-top: 32px;
+    border-top: 2px solid var(--line);
+    padding-top: 24px;
+  }
+  .result-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 16px 0;
+    border-bottom: 1px dashed var(--line);
+  }
+  .result-row:last-child { border-bottom: none; }
+  .result-label {
+    font-size: 1rem;
+    color: var(--dim);
+  }
+  .result-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+  }
+  .placeholder {
+    color: var(--dim);
+    font-size: 0.95rem;
+    text-align: center;
+    padding: 24px 0;
+  }
+  .diagram {
+    margin: 4px 0 28px;
+    text-align: center;
+  }
+  .diagram svg { max-width: 100%; height: auto; }
+  .note {
+    margin-top: 28px;
+    font-size: 0.82rem;
+    color: var(--dim);
+    line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Taper Calculator</h1>
+  <p class="sub">Enter major diameter (D), minor diameter (d), and taper length to get taper rate and angle.</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
+      <line x1="20" y1="50" x2="280" y2="50" stroke="#444444" stroke-width="1" stroke-dasharray="4 3"/>
+      <polygon points="20,20 20,80 260,62 260,38" fill="none" stroke="#ffb84d" stroke-width="2.5" stroke-linejoin="round"/>
+      <text x="10" y="15" font-size="13" fill="#ffffff" text-anchor="middle" font-family="-apple-system, sans-serif" font-weight="700">D</text>
+      <text x="270" y="32" font-size="13" fill="#ffffff" text-anchor="middle" font-family="-apple-system, sans-serif" font-weight="700">d</text>
+      <text x="140" y="95" font-size="12" fill="#b8b8b8" text-anchor="middle" font-family="-apple-system, sans-serif">length</text>
+    </svg>
+  </div>
+
+  <div class="toggle">
+    <button id="btn-mm" class="active">mm</button>
+    <button id="btn-in">inch thousandths</button>
+  </div>
+
+  <div class="field">
+    <label for="major">Major diameter (D) <span class="unit-hint" id="hint-major">larger end</span></label>
+    <input type="text" id="major" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" placeholder="0.000" autocomplete="off">
+  </div>
+
+  <div class="field">
+    <label for="minor">Minor diameter (d) <span class="unit-hint" id="hint-minor">smaller end</span></label>
+    <input type="text" id="minor" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" placeholder="0.000" autocomplete="off">
+  </div>
+
+  <div class="field">
+    <label for="length">Length of taper</label>
+    <input type="text" id="length" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" placeholder="0.000" autocomplete="off">
+  </div>
+
+  <div class="results" id="results">
+    <div class="placeholder">Fill in all three fields to see results</div>
+  </div>
+
+  <p class="note" id="note">Same units in, same units out. In mm mode, taper is given per mm of length. In inch thousandths mode, taper is given per inch.</p>
+</div>
+
+<script>
+  const major = document.getElementById('major');
+  const minor = document.getElementById('minor');
+  const length = document.getElementById('length');
+  const results = document.getElementById('results');
+  const btnMm = document.getElementById('btn-mm');
+  const btnIn = document.getElementById('btn-in');
+
+  let unit = 'mm';
+
+  function setUnit(u) {
+    unit = u;
+    if (u === 'mm') {
+      btnMm.classList.add('active');
+      btnIn.classList.remove('active');
+    } else {
+      btnIn.classList.add('active');
+      btnMm.classList.remove('active');
+    }
+    calculate();
+  }
+
+  btnMm.addEventListener('click', () => setUnit('mm'));
+  btnIn.addEventListener('click', () => setUnit('in'));
+
+  function sanitize(input) {
+    input.addEventListener('input', () => {
+      let v = input.value.replace(/[^0-9.]/g, '');
+      const parts = v.split('.');
+      if (parts.length > 2) v = parts[0] + '.' + parts.slice(1).join('');
+      input.value = v;
+      calculate();
+    });
+  }
+
+  [major, minor, length].forEach(sanitize);
+
+  function calculate() {
+    const D = parseFloat(major.value);
+    const d = parseFloat(minor.value);
+    const tl = parseFloat(length.value);
+
+    if (isNaN(D) || isNaN(d) || isNaN(tl) || tl === 0) {
+      results.innerHTML = '<div class="placeholder">Fill in all three fields to see results</div>';
+      return;
+    }
+
+    const taperPerUnit = (D - d) / tl;
+    const angleRad = Math.atan(taperPerUnit / 2);
+    const angleDeg = angleRad * (180 / Math.PI);
+
+    if (unit === 'mm') {
+      results.innerHTML = `
+        <div class="result-row">
+          <span class="result-label">Taper per mm</span>
+          <span class="result-value">${taperPerUnit.toFixed(4)}</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">Taper angle</span>
+          <span class="result-value">${angleDeg.toFixed(3)}°</span>
+        </div>
+      `;
+    } else {
+      results.innerHTML = `
+        <div class="result-row">
+          <span class="result-label">Taper per inch</span>
+          <span class="result-value">${taperPerUnit.toFixed(4)}</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">Taper angle</span>
+          <span class="result-value">${angleDeg.toFixed(3)}°</span>
+        </div>
+      `;
+    }
+  }
+</script>
+</body>
+</html>
