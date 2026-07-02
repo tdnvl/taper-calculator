@@ -1,6 +1,6 @@
 # Taper & Pass Calculator
 
-A small, mobile-optimized web app with two tools: a taper calculator and a pass calculator.
+A small, mobile-optimized web app with three tools: a taper calculator, a pass calculator, and a mm/inch converter.
 
 ## Live app
 
@@ -44,3 +44,18 @@ The result shows how much material to remove or add:
 diff (mm) = current diameter - target diameter
 diff (thou) = (diff (mm) / 25.4) × 1000
 ```
+
+## mm ⇄ in Converter
+
+Type in either the mm or inch field and the other updates in real time. Each field has a copy button below it to grab that value for pasting into another calculator.
+
+### Formula
+
+```
+inches = mm / 25.4
+mm = inches × 25.4
+```
+
+## Navigation
+
+Tap the hamburger icon (top right) to switch between the three tools. Pass Calculator is the default view on load.

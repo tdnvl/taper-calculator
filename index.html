@@ -185,6 +185,23 @@
     font-size: 1.3rem;
     padding: 14px 10px;
   }
+  .copy-btn {
+    width: 100%;
+    margin-top: 8px;
+    padding: 10px 8px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    border-radius: 8px;
+    border: 2px solid var(--line);
+    background: var(--paper);
+    color: var(--dim);
+    font-family: inherit;
+    -webkit-appearance: none;
+  }
+  .copy-btn.copied {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
 
   .results {
     margin-top: 32px;
@@ -305,6 +322,7 @@
 <nav class="menu" id="menu">
   <button class="menu-item" id="nav-taper">Taper Calculator</button>
   <button class="menu-item active" id="nav-pass">Pass Calculator</button>
+  <button class="menu-item" id="nav-convert">mm ⇄ in Converter</button>
 </nav>
 
 <div class="wrap">
@@ -389,6 +407,25 @@
     <p class="note">Fill only one box per diameter, mm or inch. If both are filled, the mm value wins.</p>
   </section>
 
+  <!-- ===================== CONVERTER VIEW ===================== -->
+  <section class="view" id="view-convert">
+    <p class="sub">Type in either field. It converts in real time. Use the copy buttons to grab a value for another calculator.</p>
+
+    <div class="field">
+      <label for="conv-mm">Millimeters</label>
+      <input type="text" id="conv-mm" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" placeholder="0.000" autocomplete="off">
+      <button class="copy-btn" id="copy-mm">Copy mm value</button>
+    </div>
+
+    <div class="field">
+      <label for="conv-in">Inches <span class="unit-hint">.000</span></label>
+      <input type="text" id="conv-in" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" placeholder="0.000" autocomplete="off">
+      <button class="copy-btn" id="copy-in">Copy inch value</button>
+    </div>
+
+    <p class="note">1 inch = 25.4 mm.</p>
+  </section>
+
 </div>
 
 <!-- Taper flip confirmation dialog -->
@@ -409,8 +446,10 @@
   const menuOverlay = document.getElementById('menu-overlay');
   const navTaper = document.getElementById('nav-taper');
   const navPass = document.getElementById('nav-pass');
+  const navConvert = document.getElementById('nav-convert');
   const viewTaper = document.getElementById('view-taper');
   const viewPass = document.getElementById('view-pass');
+  const viewConvert = document.getElementById('view-convert');
   const pageTitle = document.getElementById('page-title');
 
   function openMenu() {
@@ -427,21 +466,36 @@
   function showTaper() {
     viewTaper.classList.add('active');
     viewPass.classList.remove('active');
+    viewConvert.classList.remove('active');
     navTaper.classList.add('active');
     navPass.classList.remove('active');
+    navConvert.classList.remove('active');
     pageTitle.textContent = 'Taper Calculator';
     closeMenu();
   }
   function showPass() {
     viewPass.classList.add('active');
     viewTaper.classList.remove('active');
+    viewConvert.classList.remove('active');
     navPass.classList.add('active');
     navTaper.classList.remove('active');
+    navConvert.classList.remove('active');
     pageTitle.textContent = 'Pass Calculator';
+    closeMenu();
+  }
+  function showConvert() {
+    viewConvert.classList.add('active');
+    viewTaper.classList.remove('active');
+    viewPass.classList.remove('active');
+    navConvert.classList.add('active');
+    navTaper.classList.remove('active');
+    navPass.classList.remove('active');
+    pageTitle.textContent = 'mm ⇄ in Converter';
     closeMenu();
   }
   navTaper.addEventListener('click', showTaper);
   navPass.addEventListener('click', showPass);
+  navConvert.addEventListener('click', showConvert);
 
   /* ---------- Taper calculator ---------- */
   const major = document.getElementById('major');
@@ -614,6 +668,48 @@
       <div class="pass-sub">${absMm.toFixed(3)} mm</div>
     `;
   }
+
+  /* ---------- Converter ---------- */
+  const convMm = document.getElementById('conv-mm');
+  const convIn = document.getElementById('conv-in');
+  const copyMmBtn = document.getElementById('copy-mm');
+  const copyInBtn = document.getElementById('copy-in');
+
+  convMm.addEventListener('input', () => {
+    sanitizeDecimal(convMm);
+    const v = parseFloat(convMm.value);
+    if (!isNaN(v)) {
+      convIn.value = (v / MM_PER_INCH).toFixed(3);
+    } else {
+      convIn.value = '';
+    }
+  });
+
+  convIn.addEventListener('input', () => {
+    sanitizeDecimal(convIn);
+    const v = parseFloat(convIn.value);
+    if (!isNaN(v)) {
+      convMm.value = (v * MM_PER_INCH).toFixed(3);
+    } else {
+      convMm.value = '';
+    }
+  });
+
+  function copyValue(input, btn) {
+    if (!input.value) return;
+    navigator.clipboard.writeText(input.value).then(() => {
+      const original = btn.textContent;
+      btn.textContent = 'Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = original;
+        btn.classList.remove('copied');
+      }, 1200);
+    });
+  }
+
+  copyMmBtn.addEventListener('click', () => copyValue(convMm, copyMmBtn));
+  copyInBtn.addEventListener('click', () => copyValue(convIn, copyInBtn));
 </script>
 </body>
 </html>
