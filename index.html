@@ -366,6 +366,18 @@
   }
   .log-entry-top .flag { color: #ff8a8a; }
   .log-entry-sub { color: var(--dim); }
+  .log-entry-delete {
+    margin-top: 8px;
+    padding: 7px 12px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    border-radius: 7px;
+    border: 1px solid var(--line);
+    background: none;
+    color: #ff8a8a;
+    font-family: inherit;
+    -webkit-appearance: none;
+  }
   .clear-log {
     display: block;
     margin: 16px auto 0;
@@ -807,6 +819,7 @@
 
   let cutLog = [];
   let suppressReset = false;
+  let initialCurrentMm = NaN;
 
   function linkPair(mmInput, inInput, onChange) {
     mmInput.addEventListener('input', () => {
@@ -826,6 +839,7 @@
       cutLog = [];
       renderLog();
       hideWarning();
+      initialCurrentMm = diameterToMm(currentMmInput, currentInInput);
     }
     calculatePass();
   }
@@ -933,7 +947,7 @@
       return;
     }
     logListEl.innerHTML = cutLog
-      .map((c) => {
+      .map((c, i) => {
         const flag = c.warn ? '<span class="flag"> ⚠ overcut</span>' : '';
         return `
           <div class="log-entry">
@@ -942,10 +956,38 @@
               <span>${c.actual.toFixed(1)} thou actual</span>
             </div>
             <div class="log-entry-sub">Resulting diameter: ${c.resultMm.toFixed(3)} mm · Remaining after: ${c.remainingAfter.toFixed(1)} thou</div>
+            <button class="log-entry-delete" data-index="${i}">Delete this pass</button>
           </div>
         `;
       })
+      .reverse()
       .join('');
+  }
+
+  logListEl.addEventListener('click', (e) => {
+    if (!e.target.classList.contains('log-entry-delete')) return;
+    const index = parseInt(e.target.getAttribute('data-index'), 10);
+    deleteLogEntry(index);
+  });
+
+  function deleteLogEntry(index) {
+    cutLog.splice(index, 1);
+    cutLog.forEach((c, i) => { c.n = i + 1; });
+
+    const newCurrentMm = cutLog.length > 0
+      ? cutLog[cutLog.length - 1].resultMm
+      : initialCurrentMm;
+
+    if (!isNaN(newCurrentMm)) {
+      suppressReset = true;
+      currentMmInput.value = newCurrentMm.toFixed(3);
+      currentInInput.value = '';
+      suppressReset = false;
+    }
+
+    hideWarning();
+    renderLog();
+    calculatePass();
   }
 
   logCutBtn.addEventListener('click', () => {
