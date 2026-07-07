@@ -304,6 +304,79 @@
     min-height: 1.4em;
   }
 
+  /* Thread cutting chart */
+  .thread-filter {
+    width: 100%;
+    font-size: 1.3rem;
+    padding: 16px 14px;
+    border-radius: 12px;
+    border: 2px solid var(--line);
+    background: var(--card);
+    color: #ffffff;
+    font-family: inherit;
+    -webkit-appearance: none;
+    margin-bottom: 20px;
+  }
+  .thread-filter:focus { outline: none; border-color: var(--accent); }
+  .thread-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .thread-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px;
+    border-radius: 12px;
+    border: 2px solid var(--line);
+    background: var(--card);
+    text-align: left;
+    font-family: inherit;
+    -webkit-appearance: none;
+    color: inherit;
+  }
+  .thread-row.active {
+    border-color: var(--accent);
+    background: rgba(255,184,77,0.08);
+  }
+  .thread-row-main {
+    display: flex;
+    flex-direction: column;
+  }
+  .thread-tpi {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+  }
+  .thread-feed {
+    font-size: 0.85rem;
+    color: var(--dim);
+    font-variant-numeric: tabular-nums;
+    margin-top: 2px;
+  }
+  .thread-settings {
+    text-align: right;
+    font-size: 0.88rem;
+    color: #ffffff;
+    line-height: 1.4;
+  }
+  .thread-settings .label {
+    display: block;
+    font-size: 0.72rem;
+    color: var(--dim);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .thread-no-results {
+    text-align: center;
+    color: var(--dim);
+    font-size: 0.95rem;
+    padding: 24px 0;
+  }
+
   .results {
     margin-top: 32px;
     border-top: 2px solid var(--line);
@@ -544,7 +617,8 @@
   <button class="menu-item" id="nav-taper">Taper Calculator</button>
   <button class="menu-item active" id="nav-pass">Pass Calculator</button>
   <button class="menu-item" id="nav-convert">mm ⇄ in Converter</button>
-  <div class="menu-version">v2.2</div>
+  <button class="menu-item" id="nav-thread">Thread Cutting</button>
+  <div class="menu-version">v3</div>
 </nav>
 
 <div class="wrap">
@@ -691,6 +765,17 @@
     <p class="note">1 inch = 25.4 mm.</p>
   </section>
 
+  <!-- ===================== THREAD CUTTING VIEW ===================== -->
+  <section class="view" id="view-thread">
+    <p class="sub">South Bend 9A, Chart No. 1. Type a TPI or feed value to filter, or scroll the full list. Tap a row to bookmark it while you're at the machine.</p>
+
+    <input type="text" class="thread-filter" id="thread-filter" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" placeholder="Filter by TPI or feed" autocomplete="off">
+
+    <div class="thread-list" id="thread-list"></div>
+
+    <p class="note">Right-hand tumbler position counts 1–8, left to right, matching the chart's columns.</p>
+  </section>
+
 </div>
 
 <!-- Fraction entry modal -->
@@ -735,13 +820,14 @@
   const hamburgerBtn = document.getElementById('hamburger-btn');
   const menu = document.getElementById('menu');
   const menuOverlay = document.getElementById('menu-overlay');
-  const navTaper = document.getElementById('nav-taper');
-  const navPass = document.getElementById('nav-pass');
-  const navConvert = document.getElementById('nav-convert');
-  const viewTaper = document.getElementById('view-taper');
-  const viewPass = document.getElementById('view-pass');
-  const viewConvert = document.getElementById('view-convert');
   const pageTitle = document.getElementById('page-title');
+
+  const VIEWS = [
+    { nav: document.getElementById('nav-taper'), view: document.getElementById('view-taper'), title: 'Taper Calculator' },
+    { nav: document.getElementById('nav-pass'), view: document.getElementById('view-pass'), title: 'Pass Calculator' },
+    { nav: document.getElementById('nav-convert'), view: document.getElementById('view-convert'), title: 'mm ⇄ in Converter' },
+    { nav: document.getElementById('nav-thread'), view: document.getElementById('view-thread'), title: 'Thread Cutting' }
+  ];
 
   function openMenu() {
     menu.classList.add('show');
@@ -754,39 +840,20 @@
   hamburgerBtn.addEventListener('click', openMenu);
   menuOverlay.addEventListener('click', closeMenu);
 
-  function showTaper() {
-    viewTaper.classList.add('active');
-    viewPass.classList.remove('active');
-    viewConvert.classList.remove('active');
-    navTaper.classList.add('active');
-    navPass.classList.remove('active');
-    navConvert.classList.remove('active');
-    pageTitle.textContent = 'Taper Calculator';
+  function showView(target) {
+    VIEWS.forEach((v) => {
+      const isActive = v === target;
+      v.nav.classList.toggle('active', isActive);
+      v.view.classList.toggle('active', isActive);
+    });
+    pageTitle.textContent = target.title;
     closeMenu();
   }
-  function showPass() {
-    viewPass.classList.add('active');
-    viewTaper.classList.remove('active');
-    viewConvert.classList.remove('active');
-    navPass.classList.add('active');
-    navTaper.classList.remove('active');
-    navConvert.classList.remove('active');
-    pageTitle.textContent = 'Pass Calculator';
-    closeMenu();
-  }
-  function showConvert() {
-    viewConvert.classList.add('active');
-    viewTaper.classList.remove('active');
-    viewPass.classList.remove('active');
-    navConvert.classList.add('active');
-    navTaper.classList.remove('active');
-    navPass.classList.remove('active');
-    pageTitle.textContent = 'mm ⇄ in Converter';
-    closeMenu();
-  }
-  navTaper.addEventListener('click', showTaper);
-  navPass.addEventListener('click', showPass);
-  navConvert.addEventListener('click', showConvert);
+
+  VIEWS.forEach((v) => {
+    v.nav.addEventListener('click', () => showView(v));
+  });
+
 
   /* ---------- Taper calculator ---------- */
   const MM_PER_INCH = 25.4;
@@ -1281,6 +1348,124 @@
     convIn.dispatchEvent(new Event('input', { bubbles: true }));
     closeFractionModal();
   });
+
+  /* ---------- Thread Cutting chart (South Bend 9A, Chart No. 1) ---------- */
+  // Position is the right-hand tumbler, counted 1-8 left to right per the
+  // chart's columns. Feed is in thousandths of an inch per revolution.
+  const THREAD_CHART = [
+    { studGear: 40, tumbler: 'A', position: 1, tpi: 4,   feed: 0.0853 },
+    { studGear: 40, tumbler: 'A', position: 2, tpi: 4.5, feed: 0.0758 },
+    { studGear: 40, tumbler: 'A', position: 3, tpi: 5,   feed: 0.0683 },
+    { studGear: 40, tumbler: 'A', position: 4, tpi: 5.5, feed: 0.0621 },
+    { studGear: 40, tumbler: 'A', position: 5, tpi: 5.75, feed: 0.0594 },
+    { studGear: 40, tumbler: 'A', position: 6, tpi: 6,   feed: 0.0569 },
+    { studGear: 40, tumbler: 'A', position: 7, tpi: 6.5, feed: 0.0525 },
+    { studGear: 40, tumbler: 'A', position: 8, tpi: 7,   feed: 0.0488 },
+
+    { studGear: 20, tumbler: 'A', position: 1, tpi: 8,   feed: 0.0427 },
+    { studGear: 20, tumbler: 'A', position: 2, tpi: 9,   feed: 0.0379 },
+    { studGear: 20, tumbler: 'A', position: 3, tpi: 10,  feed: 0.0341 },
+    { studGear: 20, tumbler: 'A', position: 4, tpi: 11,  feed: 0.0310 },
+    { studGear: 20, tumbler: 'A', position: 5, tpi: 11.5, feed: 0.0297 },
+    { studGear: 20, tumbler: 'A', position: 6, tpi: 12,  feed: 0.0284 },
+    { studGear: 20, tumbler: 'A', position: 7, tpi: 13,  feed: 0.0263 },
+    { studGear: 20, tumbler: 'A', position: 8, tpi: 14,  feed: 0.0244 },
+
+    { studGear: 20, tumbler: 'B', position: 1, tpi: 16,  feed: 0.0213 },
+    { studGear: 20, tumbler: 'B', position: 2, tpi: 18,  feed: 0.0190 },
+    { studGear: 20, tumbler: 'B', position: 3, tpi: 20,  feed: 0.0171 },
+    { studGear: 20, tumbler: 'B', position: 4, tpi: 22,  feed: 0.0155 },
+    { studGear: 20, tumbler: 'B', position: 5, tpi: 23,  feed: 0.0148 },
+    { studGear: 20, tumbler: 'B', position: 6, tpi: 24,  feed: 0.0142 },
+    { studGear: 20, tumbler: 'B', position: 7, tpi: 26,  feed: 0.0131 },
+    { studGear: 20, tumbler: 'B', position: 8, tpi: 28,  feed: 0.0122 },
+
+    { studGear: 20, tumbler: 'C', position: 1, tpi: 32,  feed: 0.0107 },
+    { studGear: 20, tumbler: 'C', position: 2, tpi: 36,  feed: 0.0095 },
+    { studGear: 20, tumbler: 'C', position: 3, tpi: 40,  feed: 0.0085 },
+    { studGear: 20, tumbler: 'C', position: 4, tpi: 44,  feed: 0.0078 },
+    { studGear: 20, tumbler: 'C', position: 5, tpi: 46,  feed: 0.0074 },
+    { studGear: 20, tumbler: 'C', position: 6, tpi: 48,  feed: 0.0071 },
+    { studGear: 20, tumbler: 'C', position: 7, tpi: 52,  feed: 0.0066 },
+    { studGear: 20, tumbler: 'C', position: 8, tpi: 56,  feed: 0.0061 },
+
+    { studGear: 20, tumbler: 'D', position: 1, tpi: 64,  feed: 0.0053 },
+    { studGear: 20, tumbler: 'D', position: 2, tpi: 72,  feed: 0.0047 },
+    { studGear: 20, tumbler: 'D', position: 3, tpi: 80,  feed: 0.0043 },
+    { studGear: 20, tumbler: 'D', position: 4, tpi: 88,  feed: 0.0039 },
+    { studGear: 20, tumbler: 'D', position: 5, tpi: 92,  feed: 0.0037 },
+    { studGear: 20, tumbler: 'D', position: 6, tpi: 96,  feed: 0.0036 },
+    { studGear: 20, tumbler: 'D', position: 7, tpi: 104, feed: 0.0033 },
+    { studGear: 20, tumbler: 'D', position: 8, tpi: 112, feed: 0.0030 },
+
+    { studGear: 20, tumbler: 'E', position: 1, tpi: 128, feed: 0.0027 },
+    { studGear: 20, tumbler: 'E', position: 2, tpi: 144, feed: 0.0024 },
+    { studGear: 20, tumbler: 'E', position: 3, tpi: 160, feed: 0.0021 },
+    { studGear: 20, tumbler: 'E', position: 4, tpi: 176, feed: 0.0019 },
+    { studGear: 20, tumbler: 'E', position: 5, tpi: 184, feed: 0.0019 },
+    { studGear: 20, tumbler: 'E', position: 6, tpi: 192, feed: 0.0018 },
+    { studGear: 20, tumbler: 'E', position: 7, tpi: 208, feed: 0.0016 },
+    { studGear: 20, tumbler: 'E', position: 8, tpi: 224, feed: 0.0015 }
+  ];
+
+  const threadFilterInput = document.getElementById('thread-filter');
+  const threadListEl = document.getElementById('thread-list');
+  let threadActiveKey = null;
+
+  function formatTpi(tpi) {
+    return Number.isInteger(tpi) ? String(tpi) : tpi.toFixed(2).replace(/0$/, '');
+  }
+
+  function renderThreadList(filterText) {
+    const filtered = THREAD_CHART.filter((row) => {
+      if (!filterText) return true;
+      const tpiStr = formatTpi(row.tpi);
+      const feedStr = row.feed.toFixed(4).replace(/^0/, '');
+      return tpiStr.startsWith(filterText) || feedStr.includes(filterText);
+    });
+
+    if (filtered.length === 0) {
+      threadListEl.innerHTML = '<div class="thread-no-results">No matching TPI or feed value</div>';
+      return;
+    }
+
+    threadListEl.innerHTML = filtered.map((row) => {
+      const key = `${row.studGear}-${row.tumbler}-${row.position}`;
+      const activeClass = key === threadActiveKey ? ' active' : '';
+      return `
+        <button class="thread-row${activeClass}" data-key="${key}">
+          <div class="thread-row-main">
+            <span class="thread-tpi">${formatTpi(row.tpi)} TPI</span>
+            <span class="thread-feed">${row.feed.toFixed(4)} in/rev</span>
+          </div>
+          <div class="thread-settings">
+            <span class="label">Stud</span>${row.studGear}
+            <span class="label">Tumbler</span>${row.tumbler}
+            <span class="label">Position</span>${row.position}
+          </div>
+        </button>
+      `;
+    }).join('');
+  }
+
+  threadFilterInput.addEventListener('input', () => {
+    let v = threadFilterInput.value.replace(/[^0-9.]/g, '');
+    const parts = v.split('.');
+    if (parts.length > 2) v = parts[0] + '.' + parts.slice(1).join('');
+    threadFilterInput.value = v;
+    renderThreadList(v);
+  });
+
+  threadListEl.addEventListener('click', (e) => {
+    const btn = e.target.closest('.thread-row');
+    if (!btn) return;
+    const key = btn.getAttribute('data-key');
+    threadActiveKey = (threadActiveKey === key) ? null : key;
+    renderThreadList(threadFilterInput.value);
+  });
+
+  renderThreadList('');
+
 </script>
 </body>
 </html>
